@@ -13,7 +13,7 @@ const schema = new Schema({
   },
   favorite: {
     type: Boolean,
-    // default: false,
+    default: false,
   },
 });
 
