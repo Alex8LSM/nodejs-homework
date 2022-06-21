@@ -6,14 +6,15 @@ const {
   editContact,
   editContactFavorite,
   deleteContact,
-} = require('../../modules/routerFunc');
+  validateId,
+} = require('../../modules/controllers');
 const router = express.Router();
 
 router.get('/', getContacts);
-router.get('/:contactId', getContactById);
+router.get('/:contactId', validateId, getContactById);
 router.post('/', addContact);
-router.put('/:contactId', editContact);
-router.patch('/:contactId/favorite', editContactFavorite);
-router.delete('/:contactId', deleteContact);
+router.put('/:contactId', validateId, editContact);
+router.patch('/:contactId/favorite', validateId, editContactFavorite);
+router.delete('/:contactId', validateId, deleteContact);
 
 module.exports = router;

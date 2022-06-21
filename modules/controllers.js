@@ -1,19 +1,14 @@
-const Joi = require('joi');
 const contactService = require('../services/contact.service');
+const { schema } = require('../models/contacts');
 const { createError } = require('./errors');
 const { ObjectId } = require('mongoose').Types;
 
-const schema = Joi.object({
-  name: Joi.string().alphanum().min(3).max(30).required(),
-  email: Joi.string()
-    .email({
-      minDomainSegments: 2,
-      tlds: { allow: ['com', 'net', 'ua', 'ru'] },
-    })
-    .required(),
-  phone: Joi.string().required(),
-  favorite: Joi.bool(),
-});
+const validateId = (req, res, next) => {
+  if (!ObjectId.isValid(req.params.contactId)) {
+    throw createError(404, 'Not found');
+  }
+  next();
+};
 
 const getContacts = async (req, res, next) => {
   try {
@@ -27,9 +22,6 @@ const getContacts = async (req, res, next) => {
 const getContactById = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    if (!ObjectId.isValid(contactId)) {
-      throw createError(404, 'Not found');
-    }
     const contact = await contactService.getContactById(contactId);
     if (!contact) {
       throw createError(404, 'Not found');
@@ -68,9 +60,6 @@ const addContact = async (req, res, next) => {
 const editContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    if (!ObjectId.isValid(contactId)) {
-      throw createError(404, 'Not found');
-    }
     const body = req.body;
     const contact = await contactService.updateContact(contactId, body);
     if (Object.keys(body).length === 0) {
@@ -96,9 +85,6 @@ const editContactFavorite = async (req, res, next) => {
       throw createError(400, 'missing field favorite');
     } else {
       const { contactId } = req.params;
-      if (!ObjectId.isValid(contactId)) {
-        throw createError(404, 'Not found');
-      }
       const contact = await contactService.updateStatusContact(contactId, body);
       if (!contact) {
         throw createError(404, 'Not found');
@@ -113,12 +99,9 @@ const editContactFavorite = async (req, res, next) => {
 const deleteContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    if (!ObjectId.isValid(contactId)) {
-      throw createError(404, 'Not found');
-    }
     const contact = await contactService.removeContact(contactId);
     if (!contact) {
-      res.status(404).json({ message: 'Not found' });
+      throw createError(404, 'Not found');
     } else {
       res.status(200).json({ message: 'contact deleted' });
     }
@@ -134,4 +117,5 @@ module.exports = {
   editContact,
   editContactFavorite,
   deleteContact,
+  validateId,
 };
