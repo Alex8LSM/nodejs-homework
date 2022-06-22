@@ -1,21 +1,18 @@
-const Joi = require("joi");
-const contacts = require("../models/contacts");
-const { createError } = require("./errors");
+const contactService = require('../services/contact.service');
+const { schema } = require('../models/contacts');
+const { createError } = require('./errors');
+const { ObjectId } = require('mongoose').Types;
 
-const schema = Joi.object({
-  name: Joi.string().alphanum().min(3).max(30).required(),
-  email: Joi.string()
-    .email({
-      minDomainSegments: 2,
-      tlds: { allow: ["com", "net", "ua", "ru"] },
-    })
-    .required(),
-  phone: Joi.string().required(),
-});
+const validateId = (req, res, next) => {
+  if (!ObjectId.isValid(req.params.contactId)) {
+    throw createError(404, 'Not found');
+  }
+  next();
+};
 
 const getContacts = async (req, res, next) => {
   try {
-    const all = await contacts.listContacts();
+    const all = await contactService.listContacts();
     res.json(all);
   } catch (e) {
     next(e);
@@ -25,9 +22,9 @@ const getContacts = async (req, res, next) => {
 const getContactById = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    const contact = await contacts.getContactById(contactId);
+    const contact = await contactService.getContactById(contactId);
     if (!contact) {
-      res.status(404).json({ message: "Not found" });
+      throw createError(404, 'Not found');
     } else {
       res.json(contact);
     }
@@ -39,6 +36,7 @@ const getContactById = async (req, res, next) => {
 const addContact = async (req, res, next) => {
   try {
     const body = req.body;
+    if (body.favorite === undefined) body.favorite = false;
     if (!body.name) {
       throw createError(400, `missing required name field`);
     } else if (!body.email) {
@@ -51,7 +49,7 @@ const addContact = async (req, res, next) => {
         console.log(error);
         throw createError(400, error.message);
       }
-      const contact = await contacts.addContact(body);
+      const contact = await contactService.addContact(body);
       res.status(201).json(contact);
     }
   } catch (e) {
@@ -63,11 +61,11 @@ const editContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
     const body = req.body;
-    const contact = await contacts.updateContact(contactId, body);
+    const contact = await contactService.updateContact(contactId, body);
     if (Object.keys(body).length === 0) {
-      throw createError(400, "missing fields");
+      throw createError(400, 'missing fields');
     } else if (!contact) {
-      throw createError(404, "Not found");
+      throw createError(404, 'Not found');
     } else {
       const { error } = schema.validate(body);
       if (error) {
@@ -79,14 +77,33 @@ const editContact = async (req, res, next) => {
     next(e);
   }
 };
+
+const editContactFavorite = async (req, res, next) => {
+  try {
+    const body = req.body;
+    if (body.favorite === undefined) {
+      throw createError(400, 'missing field favorite');
+    } else {
+      const { contactId } = req.params;
+      const contact = await contactService.updateStatusContact(contactId, body);
+      if (!contact) {
+        throw createError(404, 'Not found');
+      } else {
+        res.status(200).json(contact);
+      }
+    }
+  } catch (e) {
+    next(e);
+  }
+};
 const deleteContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    const contact = await contacts.removeContact(contactId);
+    const contact = await contactService.removeContact(contactId);
     if (!contact) {
-      res.status(404).json({ message: "Not found" });
+      throw createError(404, 'Not found');
     } else {
-      res.status(200).json({ message: "contact deleted" });
+      res.status(200).json({ message: 'contact deleted' });
     }
   } catch (e) {
     next(e);
@@ -98,5 +115,7 @@ module.exports = {
   getContactById,
   addContact,
   editContact,
+  editContactFavorite,
   deleteContact,
+  validateId,
 };
