@@ -5,7 +5,13 @@ const createError = (status, message) => {
   console.log(e.status, e.message);
   return e;
 };
-
+class ValidationError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
 module.exports = {
   createError,
+  ValidationError,
 };
