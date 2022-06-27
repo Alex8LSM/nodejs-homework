@@ -1,18 +1,10 @@
-const contactService = require('../services/contact.service');
-const { schema } = require('../models/contacts');
-const { createError } = require('./errors');
-const { ObjectId } = require('mongoose').Types;
-
-const validateId = (req, res, next) => {
-  if (!ObjectId.isValid(req.params.contactId)) {
-    throw createError(404, 'Not found');
-  }
-  next();
-};
+const { contactService } = require('../services');
+const { schema } = require('../models/contact');
+const { createError } = require('../helpers/errors');
 
 const getContacts = async (req, res, next) => {
   try {
-    const all = await contactService.listContacts();
+    const all = await contactService.listContacts(req.user._id, req.query);
     res.json(all);
   } catch (e) {
     next(e);
@@ -36,6 +28,7 @@ const getContactById = async (req, res, next) => {
 const addContact = async (req, res, next) => {
   try {
     const body = req.body;
+    const id = req.user._id;
     if (body.favorite === undefined) body.favorite = false;
     if (!body.name) {
       throw createError(400, `missing required name field`);
@@ -49,7 +42,7 @@ const addContact = async (req, res, next) => {
         console.log(error);
         throw createError(400, error.message);
       }
-      const contact = await contactService.addContact(body);
+      const contact = await contactService.addContact(body, id);
       res.status(201).json(contact);
     }
   } catch (e) {
@@ -117,5 +110,4 @@ module.exports = {
   editContact,
   editContactFavorite,
   deleteContact,
-  validateId,
 };
