@@ -64,6 +64,9 @@ const updateUserSubscription = async (id, subscription) => {
     return await User.findById(id, '-_id email subscription');
   }
 };
+const updateUser = async (id, data) => {
+    return User.findByIdAndUpdate(id, data, {new: true});
+}
 
 module.exports = {
   registerUser,
@@ -71,4 +74,5 @@ module.exports = {
   authenticateUser,
   logoutUser,
   updateUserSubscription,
+  updateUser
 };

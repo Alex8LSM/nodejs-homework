@@ -1,4 +1,4 @@
-const { userService } = require('../services');
+const { userService, imageService } = require('../services');
 const { createError } = require('../helpers/errors');
 const { schemaSubscription } = require('../models/user');
 const registerUser = async (req, res, next) => {
@@ -66,10 +66,23 @@ const editUserSubscription = async (req, res, next) => {
   }
 };
 
+const updateUserAvatar = async (req, res, next) => {
+  try {
+    const { _id: id } = req.user;
+    const avatarURL = await imageService.uploadImage(id, req.file);
+    await userService.updateUser(id, { avatarURL });
+
+    res.json({ avatarURL });
+  } catch (e) {
+    next(e);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
   currentUser,
   editUserSubscription,
+  updateUserAvatar,
 };
