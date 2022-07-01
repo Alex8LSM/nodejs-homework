@@ -23,6 +23,11 @@ const loginUser = async ({ email, password }) => {
   if (!user) {
     throw createError(401, 'Email or password is wrong');
   }
+
+  if (user && !user.verify) {
+    throw createError(401, 'Please confirm your email.');
+  }
+
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) {
     throw createError(401, 'Email or password is wrong');
@@ -65,8 +70,11 @@ const updateUserSubscription = async (id, subscription) => {
   }
 };
 const updateUser = async (id, data) => {
-    return User.findByIdAndUpdate(id, data, {new: true});
-}
+  return User.findByIdAndUpdate(id, data, { new: true });
+};
+const findUser = async (filters) => {
+  return User.findOne(filters);
+};
 
 module.exports = {
   registerUser,
@@ -74,5 +82,6 @@ module.exports = {
   authenticateUser,
   logoutUser,
   updateUserSubscription,
-  updateUser
+  updateUser,
+  findUser,
 };
